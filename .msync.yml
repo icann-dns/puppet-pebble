@@ -3,3 +3,5 @@
 # https://voxpupuli.org/docs/updating-files-managed-with-modulesync/
 
 modulesync_config_version: '9.3.0'
+spec/spec_helper_acceptance.rb:
+  unmanaged: false
