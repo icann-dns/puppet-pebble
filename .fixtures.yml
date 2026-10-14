@@ -1,0 +1,11 @@
+fixtures:
+  forge_modules:
+    stdlib:
+      repo: puppetlabs/stdlib
+      ref: 9.7.0
+    extlib:
+      repo: puppet/extlib
+      ref: 8.4.0
+    systemd:
+      repo: puppet/systemd
+      ref: 9.4.0
