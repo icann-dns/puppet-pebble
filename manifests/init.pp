@@ -20,28 +20,30 @@
 # @param chain_length Value for the PEBBLE_CHAIN_LENGTH environment variable
 # @param certificate_source Path to the certificate file
 # @param private_key_source Path to the private key file
+# @param eab External Account Binding configuration hash containing 'kid' and 'hmac_key'
 #
 class pebble (
-  String             $package_name              = 'pebble',
-  String             $user                      = 'pebble',
-  String             $group                     = 'pebble',
-  Stdlib::Unixpath   $config_dir                = '/etc/pebble',
-  String             $listen_address            = '0.0.0.0:14000',
-  String             $management_listen_address = '0.0.0.0:15000',
-  Stdlib::Port       $http_port                 = 5002,
-  Stdlib::Port       $tls_port                  = 5001,
-  Boolean            $strict                    = false,
-  Boolean            $va_nosleep                = false,
-  Boolean            $va_always_valid           = false,
-  Integer[1]         $va_sleeptime              = 15,
-  Integer[0, 100]    $wfe_noncereject           = 5,
-  Integer[0, 100]    $wfe_orders_per_page       = 3,
-  Integer[0, 100]    $authzreuse                = 50,
-  Boolean            $alternate_roots           = false,
-  Integer[1]         $chain_length              = 1,
-  Stdlib::Filesource $certificate_source        = 'puppet:///modules/pebble/pebble.minica.pem',
-  Stdlib::Filesource $private_key_source        = 'puppet:///modules/pebble/pebble.minica.key.pem',
-  Optional[String]   $dns_resolver              = undef,
+  String                     $package_name              = 'pebble',
+  String                     $user                      = 'pebble',
+  String                     $group                     = 'pebble',
+  Stdlib::Unixpath           $config_dir                = '/etc/pebble',
+  String                     $listen_address            = '0.0.0.0:14000',
+  String                     $management_listen_address = '0.0.0.0:15000',
+  Stdlib::Port               $http_port                 = 5002,
+  Stdlib::Port               $tls_port                  = 5001,
+  Boolean                    $strict                    = false,
+  Boolean                    $va_nosleep                = false,
+  Boolean                    $va_always_valid           = false,
+  Integer[1]                 $va_sleeptime              = 15,
+  Integer[0, 100]            $wfe_noncereject           = 5,
+  Integer[0, 100]            $wfe_orders_per_page       = 3,
+  Integer[0, 100]            $authzreuse                = 50,
+  Boolean                    $alternate_roots           = false,
+  Integer[1]                 $chain_length              = 1,
+  Stdlib::Filesource         $certificate_source        = 'puppet:///modules/pebble/pebble.minica.pem',
+  Stdlib::Filesource         $private_key_source        = 'puppet:///modules/pebble/pebble.minica.key.pem',
+  Optional[String[1]]        $dns_resolver              = undef,
+  Hash[String[1], String[1]] $eab                        = {},
 ) {
   $binary = '/usr/bin/pebble'
 
@@ -60,6 +62,13 @@ class pebble (
     home   => $config_dir,
   }
 
+  $auth = $eab.empty() ? {
+    true       => {},
+    default    => {
+      'externalAccountBindingRequired' => true,
+      'externalAccountMACKeys'         => $eab,
+    },
+  }
   $config = {
     'pebble' => {
       'listenAddress'           => $listen_address,
@@ -68,7 +77,7 @@ class pebble (
       'privateKey'              => "${config_dir}/key.pem",
       'httpPort'                => $http_port,
       'tlsPort'                 => $tls_port,
-    },
+    } + $auth,
   }
   $environment = {
     'PEBBLE_VA_ALWAYS_VALID'     => $va_always_valid.bool2str('1', '0'),
