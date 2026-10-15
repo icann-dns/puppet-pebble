@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper_acceptance'
+require 'json'
 
 describe 'pebble' do
   it 'installs and configures Pebble idempotently' do
@@ -10,6 +11,22 @@ describe 'pebble' do
 
     apply_manifest(manifest, catch_failures: true)
     apply_manifest(manifest, catch_changes: true)
+  end
+
+  it 'configures external account binding credentials' do
+    manifest = <<~PUPPET
+      class { 'pebble':
+        eab => { 'acceptance-kid' => 'acceptance-hmac-key' },
+      }
+    PUPPET
+
+    apply_manifest(manifest, catch_failures: true)
+    config = JSON.parse(file('/etc/pebble/pebble-config.json').content).fetch('pebble')
+
+    expect(config).to include(
+      'externalAccountBindingRequired' => true,
+      'externalAccountMACKeys'         => { 'acceptance-kid' => 'acceptance-hmac-key' },
+    )
   end
 
   describe package('pebble') do
